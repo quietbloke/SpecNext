@@ -81,7 +81,6 @@ SpritesUpdate
 	jp .updateXPos
 
 .checkRight
-	ld a,h
 	cp $ff			; have we hit the right edge
 	jp nz,.updateXPos
 
@@ -109,7 +108,6 @@ SpritesUpdate
 	jp .updateYPos
 
 .checkBottom
-	ld a,h
 	cp 192 + 17			; have we hit the bottom edge
 	jp c,.updateYPos
 
