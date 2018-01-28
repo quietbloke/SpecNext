@@ -11,9 +11,10 @@ start
 	INCLUDE "Defines.asm"
 	INCLUDE "Macros.asm"
 	INCLUDE "GraphicFunctions.asm"
+	INCLUDE "sprites.asm"
 
 Initialise
-	ld a, GRAPHIC_LOWRESMODE
+	ld a, GRAPHIC_LOWRESMODE + GRAPHIC_SPRITES_VISIBLE
 	call SetSpriteControlRegister		; set to lowres mode
 
 ;	ClearULA
@@ -44,6 +45,9 @@ DrawLineSameBlock
 	inc a
 	djnz DrawLineOuterLoop
 
+	call InitSprites
+	ei
+
 	ld a,0
 	push af
 MainLoop
@@ -56,12 +60,14 @@ MainLoop
 	cp 192					; a whole screen of 192 rows
 	jp nz, MainLoopScrollOK
 
-	ei
-
 	ld a,0					; then reset scroll 
 MainLoopScrollOK
 	push af
-	ld a,BLACK:SetBorder			; set border to black
+	call SpritesUpdate
+	pop af
+
+	push af
+	ld a,BLUE:SetBorder			; set border to black
 	halt					; slow down to 50 hz
 	jr MainLoop
 

@@ -15,7 +15,7 @@
 ;
 	MACRO SetNormal
 		ld a,TURBO_CONTROL_REGISTER
-		ld bc,TBBLUE_REGISTER_SELECT
+		ld bc,TBBLUE_REGISTER_SELECT_PORT
 		out (c),a
 		inc b
 		xor a
@@ -26,7 +26,7 @@
 	MACRO Set7mhz
 		di
 		ld a,TURBO_CONTROL_REGISTER
-		ld bc,TBBLUE_REGISTER_SELECT
+		ld bc,TBBLUE_REGISTER_SELECT_PORT
 		out (c),a
 		inc b
 		ld a,%01
@@ -36,7 +36,7 @@
 	MACRO Set14mhz
 		di
 		ld a,TURBO_CONTROL_REGISTER
-		ld bc,TBBLUE_REGISTER_SELECT
+		ld bc,TBBLUE_REGISTER_SELECT_PORT
 		out (c),a
 		inc b
 		IFDEF _CLAMP_TO_7MHZ
@@ -50,7 +50,7 @@
 	MACRO Set28mhz
 		di
 		ld a,TURBO_CONTROL_REGISTER
-		ld bc,TBBLUE_REGISTER_SELECT
+		ld bc,TBBLUE_REGISTER_SELECT_PORT
 		out (c),a
 		inc b
 		IFDEF _CLAMP_TO_7MHZ
