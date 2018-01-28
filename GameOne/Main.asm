@@ -51,7 +51,7 @@ DrawLineSameBlock
 	ld a,0
 	push af
 MainLoop
-	ld a,GREEN:SetBorder			; set border to red
+	ld a,RED:SetBorder			; set border to red
 	pop af
 	; scroll the yoffset of screen
 	call SetYOffsetLayer2

@@ -32,9 +32,9 @@ InitSprites
 	ld bc,SPRITE_ATTRIBUTE_WRITE_PORT
 ;	ld a,0			; sprite number
 
-	ld e,(ix + SpriteXPos)
+	ld e,(ix + SpriteXPosHi)
 	out (c),e
-	ld e,(ix + SpriteYPos)
+	ld e,(ix + SpriteYPosHi)
 	out (c),e
 
 	ld a,(ix + SpriteXPosBit8)
@@ -67,62 +67,58 @@ SpritesUpdate
 ; ----------------------------------
 ; update xpos
 ; ----------------------------------
-	ld de,(ix + SpriteXPos)			; get xpos and xvel
-	ld a,e
-	add a,d
+	ld de,(ix + SpriteXPosLow)			
+	ld hl,(ix + SpriteXVelLow)			
+	add hl,de
 
 ; has the sprite passed the edge of the screen
 .checkLeft
+	ld a,h
 	cp 32				; have we hit the top edge
-	jp c,.bounceXVel
-.checkRight
-	cp 192 + 17			; have we hit the bottom edge
-	jp nc,.bounceXVel
+	jp nc,.checkRight
 
+	ld hl,$ff00
+	jp .updateXPos
+
+.checkRight
+	ld a,h
+	cp $ff			; have we hit the right edge
+	jp nz,.updateXPos
+
+	ld hl,$2000
 	jr .updateXPos
 
-.bounceXVel
-	ld a,d
-	neg
-	ld (ix + SpriteXVel),a
-
-	ld a,e
-	add a,d
-
 .updateXPos
-	ld (ix + SpriteXPos),a			; save the new xpos
-	out (c),a				; and write new position to sprite
+	ld (ix + SpriteXPosLow),hl			; save the new xpos
+	out (c),h				; and write new position to sprite
 
 ; ----------------------------------
-; update xpos
+; update ypos
 ; ----------------------------------
-	ld de,(ix + SpriteYPos)
-	ld a,e
-	add a,d
+	ld de,(ix + SpriteYPosLow)
+	ld hl,(ix + SpriteYVelLow)
+	add hl,de
 
 ; has the sprite passed the edge of the screen
 .checkTop
+	ld a,h
 	cp 32				; have we hit the top edge
-	jp c,.bounceYVel
-;	jp .bounceYVel
+	jp nc,.checkBottom
+
+	ld hl,$d000
+	jp .updateYPos
 
 .checkBottom
+	ld a,h
 	cp 192 + 17			; have we hit the bottom edge
-	jp nc,.bounceYVel
+	jp c,.updateYPos
 
+	ld hl,$2000
 	jr .updateYPos
 
-.bounceYVel
-	ld a,d
-	neg
-	ld (ix + SpriteYVel),a
-
-	ld a,e
-	add a,d
-
 .updateYPos
-	ld (ix + SpriteYPos),a
-	out (c),a
+	ld (ix + SpriteYPosLow),hl
+	out (c),h
 
 ; write the rest of the sprite data
 	ld a,(ix + SpriteXPosBit8)
@@ -140,20 +136,27 @@ SpritesUpdate
 	ret
 
 SpriteState		= 0	; 1 = alive
-SpriteXPosBit8 		= 1	
-SpriteXPos 		= 2	
-SpriteXVel		= 3
-SpriteYPos		= 4
-SpriteYVel		= 5
-SpriteImage 		= 6
+SpriteImage 		= 1
+SpriteXPosBit8 		= 2	
+SpriteXPosLow 		= 3	
+SpriteXPosHi 		= 4	
+SpriteXVelLow		= 5
+SpriteXVelHi		= 6
+SpriteYPosLow		= 7
+SpriteYPosHi		= 8
+SpriteYVelLow		= 9
+SpriteYVelHi		= 10
 
-SpriteDataLength = 7
-SpriteNumber = 3		; number of sprites
+SpriteDataLength = 11
+SpriteNumber = 6		; number of sprites
 ;SpriteData	ds SpriteNumber * SpriteDataLength	; reserve space
 
-SpriteData 	db $01,$00,$20,$01,$30,$00,$00
-		db $01,$00,$40,$00,$50,$01,$01
-		db $01,$01,$00,$00,$70,$00,$01
+SpriteData 	db $01,$00,  $00,$00,$20, $00,$ff,  $00,$30, $00,$00
+	 	db $01,$00,  $00,$00,$40, $00,$01,  $00,$50, $00,$00
+		db $01,$01,  $00,$00,$60, $00,$00,  $00,$70, $40,$00
+		db $01,$01,  $00,$00,$80, $00,$00,  $00,$90, $bf,$ff
+		db $01,$01,  $00,$00,$a0, $00,$00,  $00,$b0, $00,$01
+		db $01,$01,  $00,$00,$c0, $00,$00,  $00,$d0, $00,$ff
 
 SpriteImages:
 	db  $E3, $E3, $E3, $E3, $E3, $06, $06, $06, $06, $06, $06, $E3, $E3, $E3, $E3, $E3;
