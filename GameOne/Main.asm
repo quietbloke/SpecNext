@@ -19,7 +19,7 @@ Initialise
 
 ;	ClearULA
 	SetNormal
-	ld a,BLUE:SetBorder			; set border to black
+	ld a,GREEN:SetBorder			; set border to black
 
 DrawLine
 	ld hl,$4000
@@ -67,7 +67,7 @@ MainLoopScrollOK
 	pop af
 
 	push af
-	ld a,BLUE:SetBorder			; set border to black
+	ld a,GREEN:SetBorder			; set border to black
 	halt					; slow down to 50 hz
 	jr MainLoop
 

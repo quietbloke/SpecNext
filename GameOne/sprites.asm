@@ -67,40 +67,60 @@ SpritesUpdate
 ; ----------------------------------
 ; update xpos
 ; ----------------------------------
-	ld de,(ix + SpriteXPosLow)			
-	ld hl,(ix + SpriteXVelLow)			
-	add hl,de
+	ld hl,(ix + SpriteXPosLow)
+	ld de,(ix + SpriteXVelLow)			
 
-; has the sprite passed the edge of the screen
+ 	ld a,(ix + SpriteXPosBit8)
+
+	add hl,de
+	adc a,0
+	bit 7,d				; if vel is negative
+	jp z, .storehighbit
+	inc a				; then inc a again
+.storehighbit
+	and a,%00000001			; only accept 1 bit for the msb value
+ 	ld (ix + SpriteXPosBit8),a	; save the MSB
+
+	bit 0,a
+	jp nz,.checkRight		; if MSB set then check if we have hit the right edge
+					; otherwise check if we have hit the left edge
 .checkLeft
 	ld a,h
-	cp 32				; have we hit the top edge
-	jp nc,.checkRight
+	cp 32				; have we hit the left edge
+	jp nc,.updateXPos
 
-	ld hl,$ff00
-	jp .updateXPos
+	ld a,1				; set the MSB
+	ld (IX + SpriteXPosBit8),a
+	ld hl,%1000			; and set our position to 16
+	jp .updateXPos			; we are done checking xpos
 
 .checkRight
-	cp $ff			; have we hit the right edge
-	jp nz,.updateXPos
+	ld a,h
+	cp 16				; have we hit the right edge
+	jp c,.updateXPos
 
-	ld hl,$2000
-	jr .updateXPos
+	ld a,0				; reset the MSB
+	ld (IX + SpriteXPosBit8),a
+	ld hl,$2000			; and set our posistion to 32 
 
 .updateXPos
-	ld (ix + SpriteXPosLow),hl			; save the new xpos
-	out (c),h				; and write new position to sprite
+	ld (ix + SpriteXPosLow),hl	; save the new xpos
+	out (c),h			; and write new position to sprite
 
 ; ----------------------------------
 ; update ypos
 ; ----------------------------------
-	ld de,(ix + SpriteYPosLow)
-	ld hl,(ix + SpriteYVelLow)
+	ld de,(ix + SpriteYVelLow)
+	ld hl,(ix + SpriteYPosLow)			
+
 	add hl,de
 
+	ld a,h
+	bit 7,d
+	jp z,.checkBottom
 ; has the sprite passed the edge of the screen
 .checkTop
-	ld a,h
+;	ld a,h
 	cp 32				; have we hit the top edge
 	jp nc,.checkBottom
 
@@ -108,7 +128,8 @@ SpritesUpdate
 	jp .updateYPos
 
 .checkBottom
-	cp 192 + 17			; have we hit the bottom edge
+;	ld a,h
+	cp $d0			; have we hit the bottom edge
 	jp c,.updateYPos
 
 	ld hl,$2000
@@ -120,6 +141,7 @@ SpritesUpdate
 
 ; write the rest of the sprite data
 	ld a,(ix + SpriteXPosBit8)
+	and a,%00000001
 	out (c),a			; the 8th bit for xpos is in the flags byte
 	ld a,(ix + SpriteImage)
 	set 7,a				; bit 7 is the sprite visible flag
@@ -129,7 +151,9 @@ SpritesUpdate
 	add ix,de
 	inc hl
 	pop bc
-	djnz .loop2
+	dec b
+	jp nz,.loop2
+;djnz .loop2
 
 	ret
 
@@ -149,12 +173,12 @@ SpriteDataLength = 11
 SpriteNumber = 6		; number of sprites
 ;SpriteData	ds SpriteNumber * SpriteDataLength	; reserve space
 
-SpriteData 	db $01,$00,  $00,$00,$20, $00,$ff,  $00,$30, $00,$00
-	 	db $01,$00,  $00,$00,$40, $00,$01,  $00,$50, $00,$00
-		db $01,$01,  $00,$00,$60, $00,$00,  $00,$70, $40,$00
-		db $01,$01,  $00,$00,$80, $00,$00,  $00,$90, $bf,$ff
-		db $01,$01,  $00,$00,$a0, $00,$00,  $00,$b0, $00,$01
-		db $01,$01,  $00,$00,$c0, $00,$00,  $00,$d0, $00,$ff
+SpriteData 	db $01,$00,  $00,$00,$20,  $00,$ff,  $00,$30, $00,$00
+	 	db $01,$00,  $00,$00,$40,  $00,$01,  $00,$50, $00,$00
+		db $01,$01,  $00,$00,$60,  $00,$00,  $00,$70, $40,$00
+		db $01,$01,  $00,$00,$80,  $00,$00,  $00,$90, $bf,$ff
+		db $01,$01,  $00,$00,$a0,  $00,$00,  $00,$b0, $00,$01
+		db $01,$01,  $00,$00,$c0,  $00,$00,  $00,$d0, $00,$ff
 
 SpriteImages:
 	db  $E3, $E3, $E3, $E3, $E3, $06, $06, $06, $06, $06, $06, $E3, $E3, $E3, $E3, $E3;
