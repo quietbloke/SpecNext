@@ -30,18 +30,9 @@ InitSprites
 ;	out (c),l
 
 ; give spite a random position
-	push hl
-	push de
-	push bc
-	push af
 	call CreateBall
-	pop af
-	pop bc
-	pop de
-	pop hl
 
 	ld bc,SPRITE_ATTRIBUTE_WRITE_PORT
-;	ld a,0			; sprite number
 
 
 	ld e,(ix + SpriteXPosHi)
@@ -103,7 +94,7 @@ SpritesUpdate
 
 	ld a,(ix + SpriteState)		; do we wrap or bounce
 	bit 1,a
-	jr nz,.leftwrap
+	jr z,.leftwrap
 
 .leftbounce
 	NegateDE
@@ -124,7 +115,7 @@ SpritesUpdate
 
 	ld a,(ix + SpriteState)
 	bit 1,a
-	jr nz,.rightwrap
+	jr z,.rightwrap
 
 .rightbounce
 	NegateDE
@@ -134,11 +125,6 @@ SpritesUpdate
 	jr .updateXPos			; we are done checking xpos
 
 .rightwrap
-	ld a,1				; set the MSB
-	ld (IX + SpriteXPosBit8),a
-	ld hl,$0f00			; and set our position to 15
-	jr .updateXPos			; we are done checking xpos
-
 	ld a,0				; reset the MSB
 	ld (IX + SpriteXPosBit8),a
 	ld hl,$2000			; and set our posistion to 32 
@@ -156,16 +142,16 @@ SpritesUpdate
 	add hl,de
 
 	ld a,h
-	bit 7,d
+	bit 7,d				; check top or bottom based on direction
 	jr z,.checkBottom
-; has the sprite passed the edge of the screen
+
 .checkTop
 	cp 32				; have we hit the top edge
 	jr nc,.checkBottom
 
 	ld a,(ix + SpriteState)		; do we wrap or bounce
 	bit 1,a
-	jr nz,.topwrap
+	jr z,.topwrap
 .topbounce
 	NegateDE
 	ld (ix + SpriteYVelLow),de
@@ -177,13 +163,12 @@ SpritesUpdate
 	jr .updateYPos
 
 .checkBottom
-;	ld a,h
 	cp $d0			; have we hit the bottom edge
 	jr c,.updateYPos
 
 	ld a,(ix + SpriteState)		; do we wrap or bounce
 	bit 1,a
-	jr nz,.bottomwrap
+	jr z,.bottomwrap
 .bottombounce
 	NegateDE
 	ld (ix + SpriteYVelLow),de
@@ -215,7 +200,7 @@ SpritesUpdate
 
 	ret
 
-SpriteState		= 0	; bit 0 = alive, bit 1=bounce
+SpriteState		= 0		; bit 0 = alive, bit 1=screen bounce
 SpriteImage 		= 1
 SpriteXPosBit8 		= 2	
 SpriteXPosLow 		= 3	
