@@ -4,7 +4,7 @@ InitSprites
 	ld b,0
 	ld hl, SpriteImages
 
-	ld b,2
+	ld b,SpriteImagesCount
 .loopOuter
 	push bc
 	ld b,0
@@ -29,8 +29,20 @@ InitSprites
 ;	ld bc,SPRITE_SELECT_PORT
 ;	out (c),l
 
+; give spite a random position
+	push hl
+	push de
+	push bc
+	push af
+	call CreateBall
+	pop af
+	pop bc
+	pop de
+	pop hl
+
 	ld bc,SPRITE_ATTRIBUTE_WRITE_PORT
 ;	ld a,0			; sprite number
+
 
 	ld e,(ix + SpriteXPosHi)
 	out (c),e
@@ -75,29 +87,57 @@ SpritesUpdate
 	add hl,de
 	adc a,0
 	bit 7,d				; if vel is negative
-	jp z, .storehighbit
+	jr z, .storehighbit
 	inc a				; then inc a again
 .storehighbit
 	and a,%00000001			; only accept 1 bit for the msb value
  	ld (ix + SpriteXPosBit8),a	; save the MSB
 
 	bit 0,a
-	jp nz,.checkRight		; if MSB set then check if we have hit the right edge
+	jr nz,.checkRight		; if MSB set then check if we have hit the right edge
 					; otherwise check if we have hit the left edge
 .checkLeft
 	ld a,h
 	cp 32				; have we hit the left edge
-	jp nc,.updateXPos
+	jr nc,.updateXPos
 
+	ld a,(ix + SpriteState)		; do we wrap or bounce
+	bit 1,a
+	jr nz,.leftwrap
+
+.leftbounce
+	NegateDE
+
+	ld (ix + SpriteXVelLow),de
+	jr .updateXPos			; we are done checking xpos
+
+.leftwrap
 	ld a,1				; set the MSB
 	ld (IX + SpriteXPosBit8),a
-	ld hl,%1000			; and set our position to 16
-	jp .updateXPos			; we are done checking xpos
+	ld hl,$0f00			; and set our position to 15
+	jr .updateXPos			; we are done checking xpos
 
 .checkRight
 	ld a,h
-	cp 16				; have we hit the right edge
-	jp c,.updateXPos
+	cp 15				; have we hit the right edge
+	jr c,.updateXPos
+
+	ld a,(ix + SpriteState)
+	bit 1,a
+	jr nz,.rightwrap
+
+.rightbounce
+	NegateDE
+
+	ld (ix + SpriteXVelLow),de
+	ld hl,$0f00
+	jr .updateXPos			; we are done checking xpos
+
+.rightwrap
+	ld a,1				; set the MSB
+	ld (IX + SpriteXPosBit8),a
+	ld hl,$0f00			; and set our position to 15
+	jr .updateXPos			; we are done checking xpos
 
 	ld a,0				; reset the MSB
 	ld (IX + SpriteXPosBit8),a
@@ -117,21 +157,39 @@ SpritesUpdate
 
 	ld a,h
 	bit 7,d
-	jp z,.checkBottom
+	jr z,.checkBottom
 ; has the sprite passed the edge of the screen
 .checkTop
-;	ld a,h
 	cp 32				; have we hit the top edge
-	jp nc,.checkBottom
+	jr nc,.checkBottom
 
+	ld a,(ix + SpriteState)		; do we wrap or bounce
+	bit 1,a
+	jr nz,.topwrap
+.topbounce
+	NegateDE
+	ld (ix + SpriteYVelLow),de
+	ld hl,$2000
+	jr .updateYPos
+
+.topwrap
 	ld hl,$d000
-	jp .updateYPos
+	jr .updateYPos
 
 .checkBottom
 ;	ld a,h
 	cp $d0			; have we hit the bottom edge
-	jp c,.updateYPos
+	jr c,.updateYPos
 
+	ld a,(ix + SpriteState)		; do we wrap or bounce
+	bit 1,a
+	jr nz,.bottomwrap
+.bottombounce
+	NegateDE
+	ld (ix + SpriteYVelLow),de
+	ld hl,$d000
+	jr .updateYPos
+.bottomwrap
 	ld hl,$2000
 	jr .updateYPos
 
@@ -157,7 +215,7 @@ SpritesUpdate
 
 	ret
 
-SpriteState		= 0	; 1 = alive
+SpriteState		= 0	; bit 0 = alive, bit 1=bounce
 SpriteImage 		= 1
 SpriteXPosBit8 		= 2	
 SpriteXPosLow 		= 3	
@@ -170,17 +228,12 @@ SpriteYVelLow		= 9
 SpriteYVelHi		= 10
 
 SpriteDataLength = 11
-SpriteNumber = 6		; number of sprites
-;SpriteData	ds SpriteNumber * SpriteDataLength	; reserve space
+SpriteNumber = 32					; number of sprites
+SpriteData	ds SpriteNumber * SpriteDataLength	; reserve space
 
-SpriteData 	db $01,$00,  $00,$00,$20,  $00,$ff,  $00,$30, $00,$00
-	 	db $01,$00,  $00,$00,$40,  $00,$01,  $00,$50, $00,$00
-		db $01,$01,  $00,$00,$60,  $00,$00,  $00,$70, $40,$00
-		db $01,$01,  $00,$00,$80,  $00,$00,  $00,$90, $bf,$ff
-		db $01,$01,  $00,$00,$a0,  $00,$00,  $00,$b0, $00,$01
-		db $01,$01,  $00,$00,$c0,  $00,$00,  $00,$d0, $00,$ff
-
+SpriteImagesCount = 4					; number of sprite images
 SpriteImages:
+Sprite1:
 	db  $E3, $E3, $E3, $E3, $E3, $06, $06, $06, $06, $06, $06, $E3, $E3, $E3, $E3, $E3;
 	db  $E3, $E3, $E3, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $E3, $E3, $E3;
 	db  $E3, $E3, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $06, $E3, $E3;
@@ -217,3 +270,44 @@ Sprite2:
 	db  $E3, $E3, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E3, $E3;
 	db  $E3, $E3, $E3, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E0, $E3, $E3, $E3;
 	db  $E3, $E3, $E3, $E3, $E3, $E0, $E0, $E0, $E0, $E0, $E0, $E3, $E3, $E3, $E3, $E3;
+
+
+
+Sprite3:
+	db  $E3, $E3, $E3, $E3, $E3, $10, $10, $10, $10, $10, $10, $E3, $E3, $E3, $E3, $E3;
+	db  $E3, $E3, $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3, $E3, $E3;
+	db  $E3, $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3, $E3;
+	db  $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3;
+	db  $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3;
+	db  $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10;
+	db  $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10;
+	db  $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10;
+	db  $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10;
+	db  $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10;
+	db  $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10;
+	db  $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3;
+	db  $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3;
+	db  $E3, $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3, $E3;
+	db  $E3, $E3, $E3, $10, $10, $10, $10, $10, $10, $10, $10, $10, $10, $E3, $E3, $E3;
+	db  $E3, $E3, $E3, $E3, $E3, $10, $10, $10, $10, $10, $10, $E3, $E3, $E3, $E3, $E3;
+
+
+
+Sprite4:
+	db  $E3, $E3, $E3, $E3, $E3, $FF, $FF, $FF, $FF, $FF, $FF, $E3, $E3, $E3, $E3, $E3;
+	db  $E3, $E3, $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3, $E3, $E3;
+	db  $E3, $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3, $E3;
+	db  $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3;
+	db  $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3;
+	db  $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF;
+	db  $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF;
+	db  $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF;
+	db  $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF;
+	db  $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF;
+	db  $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF;
+	db  $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3;
+	db  $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3;
+	db  $E3, $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3, $E3;
+	db  $E3, $E3, $E3, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $FF, $E3, $E3, $E3;
+	db  $E3, $E3, $E3, $E3, $E3, $FF, $FF, $FF, $FF, $FF, $FF, $E3, $E3, $E3, $E3, $E3;
+

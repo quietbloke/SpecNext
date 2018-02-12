@@ -12,6 +12,8 @@ start
 	INCLUDE "Macros.asm"
 	INCLUDE "GraphicFunctions.asm"
 	INCLUDE "sprites.asm"
+	INCLUDE "Balls.asm"
+	INCLUDE "Math.asm"
 
 Initialise
 	ld a, GRAPHIC_LOWRESMODE + GRAPHIC_SPRITES_VISIBLE

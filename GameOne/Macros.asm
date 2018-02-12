@@ -61,4 +61,30 @@
 		out (c),a
 	ENDM
 
+	MACRO Rand256Inline
+		push hl
+		ld hl,(RandomSeed)
+		ld a,r
+		ld d,a
+		ld e,a
+		add hl,de
+		xor l
+		add a,a
+		xor h
+		ld l,a
+		ld (RandomSeed),hl
+		pop hl
+	ENDM
+
+	MACRO NegateDE
+		ld a,d
+		xor $ff
+		ld d,a
+
+		ld a,e
+		xor $ff
+		inc a
+		ld e,a
+
+	ENDM
 
