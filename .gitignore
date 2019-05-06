@@ -2,3 +2,7 @@
 *.sublime-project
 *.bin
 *.sna
+*.ipch
+TestSprites/zcc_opt.def
+*.json
+TestSprites/cspect_win.dat
