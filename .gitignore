@@ -6,3 +6,5 @@
 TestSprites/zcc_opt.def
 *.json
 TestSprites/cspect_win.dat
+scrollDemoInC/cspect_win.dat
+scrollDemoInC/zcc_opt.def
