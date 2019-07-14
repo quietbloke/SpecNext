@@ -93,13 +93,13 @@ void loResPlot(unsigned char xpos, unsigned char ypos, unsigned char colourIndex
 void loResSetOffsetX(unsigned char xOffset)
 {
   IO_NEXTREG_REG = REG_LORES_OFFSET_X;
-  IO_NEXTREG_DAT = loresSinOffsetX[xOffset]; 
+  IO_NEXTREG_DAT = loresSinOffsetX[xOffset] * 2; 
 }
 
 void loResSetOffsetY(unsigned char yOffset)
 {
   IO_NEXTREG_REG = REG_LORES_OFFSET_Y;
-  IO_NEXTREG_DAT = loresSinOffsetX[yOffset] & 0xbf;   // NOTE : restrict to 192 for vertical values 
+  IO_NEXTREG_DAT = (loresSinOffsetX[yOffset] * 2) & 0xbf;   // NOTE : restrict to 192 for vertical values 
 }
 
 void loResSetInitPallete()
