@@ -1,6 +1,6 @@
 APP := scrolldemo
 LIB := sdcc_iy
-SRC := src/main.c src/lores.c
+SRC := src/main.c src/lores.c src/sprite.c
 EMU := ../../../tools/CSpect/CSpect.exe -zxnext -s14 -w4 -r 
 
 GFXSRC := GFX/Bg.bmp GFX/Sprites.bmp
