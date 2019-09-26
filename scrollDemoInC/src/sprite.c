@@ -32,8 +32,6 @@ void set_sprite(uint16_t xpos, uint8_t ypos, uint8_t spritePattern)
   
   IO_SPRITE_ATTRIBUTE = (xpos >> 8) & 1;
   IO_SPRITE_ATTRIBUTE = 0x80 + spritePattern;
-
-
 }
 
 void set_sprite_composite(uint16_t xpos, uint8_t ypos, uint8_t spritePattern)

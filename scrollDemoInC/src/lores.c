@@ -36,6 +36,16 @@ void loResSetOffsetY(signed char yOffset)
   IO_NEXTREG_DAT = (yOffset * 2) & 0xbf;   // NOTE : restrict to 192 for vertical values 
 }
 
+void loResSetClipWindow(unsigned char left, unsigned char right, unsigned char top, unsigned char bottom)
+{
+  IO_NEXTREG_REG = REG_CLIP_WINDOW_ULA;
+  IO_NEXTREG_DAT = left;
+  IO_NEXTREG_DAT = right;
+  IO_NEXTREG_DAT = top;
+  IO_NEXTREG_DAT = bottom;
+
+}
+
 void loResSetInitPallete()
 {
   IO_NEXTREG_REG = REG_PALETTE_CONTROL;
